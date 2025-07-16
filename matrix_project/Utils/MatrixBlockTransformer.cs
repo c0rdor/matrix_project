@@ -23,15 +23,16 @@ namespace matrix_project.Utils
         /// <param name="resultRows">The number of rows in the result matrix.</param>
         /// <param name="resultCols">The number of columns in the result matrix.</param>
         /// <param name="coordinateMap">Function to map source coordinates to result coordinates.</param>
+        /// <param name="blockSize">The size of the block for parallel processing.</param>
         /// <returns>The transformed matrix.</returns>
         public static IMatrix<T> Transform<T>(
             IMatrix<T> source,
             int resultRows,
             int resultCols,
-            Func<int, int, (int newRow, int newCol)> coordinateMap)
+            Func<int, int, (int newRow, int newCol)> coordinateMap,
+            int blockSize = 64) // Default value of 64
         {
             var result = new Matrix<T>(resultRows, resultCols);
-            int blockSize = 64;
 
             Parallel.For(0, (source.RowCount + blockSize - 1) / blockSize, i =>
             {
@@ -50,5 +51,4 @@ namespace matrix_project.Utils
             return result;
         }
     }
-
 }

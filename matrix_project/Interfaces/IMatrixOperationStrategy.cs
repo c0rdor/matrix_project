@@ -25,6 +25,6 @@ namespace matrix_project.Interfaces
         /// <param name="matrix">The input matrix.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>A task that returns the transformed matrix.</returns>
-        Task<IMatrix<T>> ExecuteOperationAsync(IMatrix<T> matrix, CancellationToken cancellationToken = default);
+        Task<IMatrix<T>> ExecuteOperationAsync(IMatrix<T> matrix, CancellationToken cancellationToken = default, int blockSize = 64);
     }
 }

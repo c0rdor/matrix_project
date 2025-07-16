@@ -41,7 +41,7 @@ namespace matrix_project.Context
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>A task that returns the transformed matrix.</returns>
         /// <exception cref="ArgumentException">Thrown if the operation type is unknown.</exception>
-        public async Task<IMatrix<T>> ExecuteOperationAsync(MatrixOperation operationType, IMatrix<T> matrix, CancellationToken cancellationToken = default)
+        public async Task<IMatrix<T>> ExecuteOperationAsync(MatrixOperation operationType, IMatrix<T> matrix, CancellationToken cancellationToken = default, int blockSize = 64)
         {
             if (!_strategies.TryGetValue(operationType, out var strategy))
             {

@@ -27,9 +27,9 @@ namespace matrix_project.Strategies
         /// <param name="matrix">The input matrix.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>A task that returns the transposed matrix.</returns>
-        public Task<IMatrix<T>> ExecuteOperationAsync(IMatrix<T> matrix, CancellationToken cancellationToken = default)
+        public Task<IMatrix<T>> ExecuteOperationAsync(IMatrix<T> matrix, CancellationToken cancellationToken = default, int blockSize = 64)
         {
-            return Task.FromResult(MatrixBlockTransformer.Transform(matrix, matrix.ColCount, matrix.RowCount, (r, c) => (c, r)));
+            return Task.FromResult(MatrixBlockTransformer.Transform(matrix, matrix.ColCount, matrix.RowCount, (r, c) => (c, r), blockSize));
         }
     }
 }

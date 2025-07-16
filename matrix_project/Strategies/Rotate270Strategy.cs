@@ -29,13 +29,13 @@ namespace matrix_project.Strategies
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>A task that returns the rotated matrix.</returns>
         /// <exception cref="InvalidOperationException">Thrown if the matrix is not square.</exception>
-        public Task<IMatrix<T>> ExecuteOperationAsync(IMatrix<T> matrix, CancellationToken cancellationToken = default)
+        public Task<IMatrix<T>> ExecuteOperationAsync(IMatrix<T> matrix, CancellationToken cancellationToken = default, int blockSize = 64)
         {
             if (matrix.RowCount != matrix.ColCount)
                 throw new InvalidOperationException("Matrix must be square for rotation");
 
             int n = matrix.RowCount;
-            return Task.FromResult(MatrixBlockTransformer.Transform(matrix, n, n, (r, c) => (matrix.ColCount - 1 - c, r)));
+            return Task.FromResult(MatrixBlockTransformer.Transform(matrix, n, n, (r, c) => (matrix.ColCount - 1 - c, r), blockSize));
         }
     }
 
