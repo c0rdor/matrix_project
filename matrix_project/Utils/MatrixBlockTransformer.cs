@@ -30,11 +30,13 @@ namespace matrix_project.Utils
             int resultRows,
             int resultCols,
             Func<int, int, (int newRow, int newCol)> coordinateMap,
+            CancellationToken cancellationToken = default,
             int blockSize = 64) // Default value of 64
         {
             var result = new Matrix<T>(resultRows, resultCols);
+            var parallelOptions = new ParallelOptions { CancellationToken = cancellationToken };
 
-            Parallel.For(0, (source.RowCount + blockSize - 1) / blockSize, i =>
+            Parallel.For(0, (source.RowCount + blockSize - 1) / blockSize, parallelOptions, i =>
             {
                 int rowStart = i * blockSize;
                 int rowEnd = Math.Min(rowStart + blockSize, source.RowCount);
@@ -42,6 +44,7 @@ namespace matrix_project.Utils
                 {
                     for (int c = 0; c < source.ColCount; c++)
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
                         var (newR, newC) = coordinateMap(r, c);
                         result[newR, newC] = source[r, c];
                     }

@@ -9,7 +9,7 @@ namespace matrix_project.Enums
     /// <summary>
     /// Перечисление, определяющее доступные операции над матрицами.
     /// </summary>
-    public enum MatrixOperation
+    public enum MatrixOperationType
     {
         /// <summary>
         /// Поворот матрицы на 90 градусов по часовой стрелке.
@@ -29,6 +29,8 @@ namespace matrix_project.Enums
         /// <summary>
         /// Транспонирование матрицы.
         /// </summary>
-        Transpose
+        Transpose,
+
+        Multiplication
     }
 }

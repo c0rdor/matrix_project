@@ -70,5 +70,43 @@ namespace matrix_project.Utils
             if (rows < matrix.RowCount)
                 Console.WriteLine("...");
         }
+
+        /// <summary>
+        /// Проверяет равенство двух матриц с точностью epsilon.
+        /// </summary>
+        /// <param name="a">Первая матрица.</param>
+        /// <param name="b">Вторая матрица.</param>
+        /// <param name="epsilon">Допустимая погрешность сравнения.</param>
+        /// <param name="mismatchRow">Номер строки первого несоответствия (если найдено).</param>
+        /// <param name="mismatchCol">Номер столбца первого несоответствия (если найдено).</param>
+        /// <returns>True, если матрицы равны с учётом epsilon, иначе false.</returns>
+        public static bool AreMatricesEqual(IMatrix<double> a, IMatrix<double> b, double epsilon, out int mismatchRow, out int mismatchCol)
+        {
+            mismatchRow = -1;
+            mismatchCol = -1;
+
+            if (a.RowCount != b.RowCount || a.ColCount != b.ColCount)
+                return false;
+
+            for (int i = 0; i < a.RowCount; i++)
+            {
+                for (int j = 0; j < a.ColCount; j++)
+                {
+                    if (Math.Abs(a[i, j] - b[i, j]) > epsilon)
+                    {
+                        mismatchRow = i;
+                        mismatchCol = j;
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        // Перегрузка с epsilon по умолчанию, без out параметров
+        public static bool AreMatricesEqual(IMatrix<double> a, IMatrix<double> b, double epsilon)
+        {
+            return AreMatricesEqual(a, b, epsilon, out _, out _);
+        }
     }
 }
