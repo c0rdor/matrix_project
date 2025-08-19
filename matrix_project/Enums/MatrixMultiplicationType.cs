@@ -18,6 +18,7 @@ namespace matrix_project.Enums
         /// <summary>Умножение с использованием AVX-512 для float (FloatAvx512MultiplicationStrategy).</summary>
         Avx512Float,
 
+        /// <summary>Умножение с использованием AVX2 для double  (DoubleAvx2MultiplicationStrategy).</summary>
         Avx2Double,
   
     }
