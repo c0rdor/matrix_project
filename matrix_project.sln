@@ -5,6 +5,8 @@ VisualStudioVersion = 17.14.36301.6
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "matrix_project", "matrix_project\matrix_project.csproj", "{0601EEB2-015F-423B-BA1E-F9D8CAE1654D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{30EDEE2F-D1CB-4263-8E87-38EC4E4E2D05}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{0601EEB2-015F-423B-BA1E-F9D8CAE1654D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0601EEB2-015F-423B-BA1E-F9D8CAE1654D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0601EEB2-015F-423B-BA1E-F9D8CAE1654D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{30EDEE2F-D1CB-4263-8E87-38EC4E4E2D05}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{30EDEE2F-D1CB-4263-8E87-38EC4E4E2D05}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{30EDEE2F-D1CB-4263-8E87-38EC4E4E2D05}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{30EDEE2F-D1CB-4263-8E87-38EC4E4E2D05}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

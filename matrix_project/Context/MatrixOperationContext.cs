@@ -1,58 +1,70 @@
 ﻿using matrix_project.Enums;
 using matrix_project.Interfaces;
-using matrix_project.Models.OperationOptions; // Убедитесь, что этот using добавлен для классов опций
+using matrix_project.Models.OperationOptions;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading; // Убедитесь, что CancellationToken доступен
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace matrix_project.Context
 {
+    /// <summary>
+    /// Контекст выполнения операций над матрицами.
+    /// Выбирает подходящую стратегию для унарных и бинарных операций.
+    /// </summary>
+    /// <typeparam name="T">Тип элементов матрицы.</typeparam>
     public class MatrixOperationContext<T> : IMatrixOperationContext<T>
     {
         private readonly ILogger<MatrixOperationContext<T>> _logger;
         private readonly IMultiplicationStrategySelector<T> _multiplicationSelector;
-        // Добавьте здесь другие селекторы стратегий по мере их появления:
-        // private readonly IAdditionStrategy<T> _additionStrategy; // Если сложение имеет одну стратегию без выбора
-        // private readonly ISubtractionStrategy<T> _subtractionStrategy; // Для вычитания
-        // private readonly IAdditionStrategySelector<T> _additionSelector; // Если сложение тоже будет иметь несколько алгоритмов
+        private readonly IReadOnlyDictionary<MatrixOperationType, IMatrixUnaryOperatorStrategy<T>> _unaryStrategies;
 
-        private readonly IEnumerable<IMatrixUnaryOperatorStrategy<T>> _unaryStrategies;
-
+        /// <summary>
+        /// Создаёт контекст операций над матрицами.
+        /// </summary>
         public MatrixOperationContext(
             ILogger<MatrixOperationContext<T>> logger,
             IMultiplicationStrategySelector<T> multiplicationSelector,
-            IEnumerable<IMatrixUnaryOperatorStrategy<T>> unaryStrategies
-            /* Добавляйте сюда другие зависимости для бинарных операций */)
+            IEnumerable<IMatrixUnaryOperatorStrategy<T>> unaryStrategies)
         {
-            _logger = logger;
-            _multiplicationSelector = multiplicationSelector;
-            _unaryStrategies = unaryStrategies;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _multiplicationSelector = multiplicationSelector ?? throw new ArgumentNullException(nameof(multiplicationSelector));
+            if (unaryStrategies == null) throw new ArgumentNullException(nameof(unaryStrategies));
 
-            _logger.LogInformation($"MatrixOperationContext<{typeof(T).Name}> инициализирован.");
+            _unaryStrategies = unaryStrategies.ToDictionary(s => s.OperationType);
+
+            _logger.LogInformation($"MatrixOperationContext<{typeof(T).Name}> initialized with {_unaryStrategies.Count} unary strategies.");
         }
 
+        /// <summary>
+        /// Выполняет унарную операцию над матрицей.
+        /// </summary>
         public Task<IMatrix<T>> ExecuteOperationAsync(
             MatrixOperationType operationType,
             IMatrix<T> matrix,
             CancellationToken cancellationToken = default,
             int blockSize = 64)
         {
-            // Находим подходящую унарную стратегию по типу операции
-            var strategy = _unaryStrategies.FirstOrDefault(s => s.OperationType == operationType);
+            if (matrix == null) throw new ArgumentNullException(nameof(matrix));
 
-            if (strategy == null)
+            if (!_unaryStrategies.TryGetValue(operationType, out var strategy))
             {
-                _logger.LogError($"Унарная стратегия для операции '{operationType}' не найдена или не зарегистрирована для типа {typeof(T).Name}.");
-                throw new NotSupportedException($"Унарная операция '{operationType}' не поддерживается.");
+                var supported = string.Join(", ", _unaryStrategies.Keys);
+                _logger.LogError("Unary strategy for operation '{Operation}' not found. Supported: {Supported}.", operationType, supported);
+                throw new NotSupportedException($"Unary operation '{operationType}' is not supported. Supported: {supported}");
             }
 
-            _logger.LogInformation($"Выполнение унарной операции '{operationType}' с матрицей {matrix.RowCount}x{matrix.ColCount}.");
+            _logger.LogInformation("Executing unary operation '{Operation}' on matrix {Rows}x{Cols}.",
+                operationType, matrix.RowCount, matrix.ColCount);
+
             return strategy.ExecuteOperationAsync(matrix, cancellationToken, blockSize);
         }
 
+        /// <summary>
+        /// Выполняет бинарную операцию над матрицами.
+        /// </summary>
         public Task<IMatrix<T>> ExecuteBinaryOperationAsync<TOptions>(
             MatrixOperationType operationType,
             IMatrix<T> matrixA,
@@ -60,52 +72,45 @@ namespace matrix_project.Context
             TOptions? options = null)
             where TOptions : MatrixBinaryOperationOptions, new()
         {
-            // Если опции не предоставлены, создаём экземпляр по умолчанию.
-            // Это гарантирует, что 'options' никогда не будет null внутри метода.
+            if (matrixA == null) throw new ArgumentNullException(nameof(matrixA));
+            if (matrixB == null) throw new ArgumentNullException(nameof(matrixB));
+
             options ??= new TOptions();
 
-            switch (operationType)
+            return operationType switch
             {
-                case MatrixOperationType.Multiplication:
-                    // Проверяем, что предоставленные опции являются MatrixMultiplicationOptions.
-                    // Это важно для доступа к специфическим параметрам умножения.
-                    if (options is MatrixMultiplicationOptions multOptions)
-                    {
-                        _logger.LogInformation($"Выполнение умножения матриц. Тип умножения: {multOptions.MultiplicationType}.");
-                        // Делегируем выбор конкретной стратегии умножения селектору.
-                        // Селектор вернёт стратегию, основываясь на multOptions.MultiplicationType.
-                        var multiplicationStrategy = _multiplicationSelector.SelectStrategy(multOptions.MultiplicationType);
-                        return multiplicationStrategy.ExecuteOperationAsync(
-                            matrixA, matrixB, multOptions.CancellationToken, multOptions.BlockSize);
-                    }
-                    else
-                    {
-                        // Логическая ошибка: переданы неверные опции для умножения.
-                        _logger.LogError($"Для операции умножения ожидались опции типа {nameof(MatrixMultiplicationOptions)}, но получены опции типа {options.GetType().Name}.");
-                        throw new ArgumentException($"Неверный тип опций для операции '{operationType}'. Ожидался {nameof(MatrixMultiplicationOptions)}.");
-                    }
+                MatrixOperationType.Multiplication when options is MatrixMultiplicationOptions multOptions =>
+                    ExecuteMultiplication(matrixA, matrixB, multOptions),
 
-                // Пример, как можно добавить другие бинарные операции:
-                // case MatrixOperationType.Addition:
-                //     if (options is MatrixAdditionOptions addOptions)
-                //     {
-                //         _logger.LogInformation($"Выполнение сложения матриц. Использование параллелизма: {addOptions.UseParallelism}.");
-                //         // Здесь вы бы вызывали стратегию сложения:
-                //         // var additionStrategy = _additionSelector.SelectStrategy(addOptions.AdditionType); // Если есть селектор
-                //         // return additionStrategy.ExecuteOperationAsync(matrixA, matrixB, addOptions.CancellationToken, addOptions.BlockSize);
-                //         throw new NotImplementedException("Операция сложения пока не реализована.");
-                //     }
-                //     else
-                //     {
-                //         _logger.LogError($"Для операции сложения ожидались опции типа {nameof(MatrixAdditionOptions)}, но получены опции типа {options.GetType().Name}.");
-                //         throw new ArgumentException($"Неверный тип опций для операции '{operationType}'. Ожидался {nameof(MatrixAdditionOptions)}.");
-                //     }
+                _ => throw new NotSupportedException(
+                    $"Binary operation '{operationType}' is not supported for type {typeof(T).Name}.")
+            };
+        }
 
-                default:
-                    // Если запрошенная операция не распознана или не реализована.
-                    _logger.LogError($"Бинарная операция '{operationType}' не поддерживается или не реализована для типа {typeof(T).Name}.");
-                    throw new NotSupportedException($"Бинарная операция '{operationType}' не поддерживается.");
+        /// <summary>
+        /// Выполняет умножение матриц с проверкой соответствия размеров.
+        /// </summary>
+        private Task<IMatrix<T>> ExecuteMultiplication(
+            IMatrix<T> matrixA,
+            IMatrix<T> matrixB,
+            MatrixMultiplicationOptions options)
+        {
+            if (matrixA.ColCount != matrixB.RowCount)
+            {
+                _logger.LogError(
+                    "Cannot multiply matrices: A({RowsA}x{ColsA}) and B({RowsB}x{ColsB}) have incompatible dimensions.",
+                    matrixA.RowCount, matrixA.ColCount, matrixB.RowCount, matrixB.ColCount);
+                throw new InvalidOperationException("Matrix dimensions are incompatible for multiplication.");
             }
+
+            _logger.LogInformation(
+                "Executing matrix multiplication {RowsA}x{ColsA} * {RowsB}x{ColsB} using {StrategyType}.",
+                matrixA.RowCount, matrixA.ColCount, matrixB.RowCount, matrixB.ColCount, options.MultiplicationType);
+
+            var strategy = _multiplicationSelector.SelectStrategy(options.MultiplicationType)
+                           ?? throw new InvalidOperationException($"No strategy found for multiplication type {options.MultiplicationType}");
+
+            return strategy.ExecuteOperationAsync(matrixA, matrixB, options.CancellationToken, options.BlockSize);
         }
     }
 }
